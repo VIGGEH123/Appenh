@@ -98,5 +98,22 @@ export function useSession() {
     [sessionId],
   );
 
-  return { sessionId, totalSaved, ordersCount, addSavings, recordOrder };
+  const resetSession = useCallback(async () => {
+    setTotalSaved(0);
+    setOrdersCount(0);
+    localStorage.setItem(SAVINGS_KEY, '0');
+    localStorage.setItem(ORDERS_KEY, '0');
+    try {
+      if (sessionId) {
+        await supabase
+          .from('sessions')
+          .update({ total_saved: 0, orders_count: 0 })
+          .eq('id', sessionId);
+      }
+    } catch {
+      // localStorage already reset
+    }
+  }, [sessionId]);
+
+  return { sessionId, totalSaved, ordersCount, addSavings, recordOrder, resetSession };
 }

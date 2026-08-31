@@ -1,12 +1,16 @@
 import { useState, useMemo } from 'react';
-import { Star, Clock, Bike, Search, TrendingUp, MapPin, Utensils } from 'lucide-react';
-import type { Restaurant } from '@/types';
+import { Star, Clock, Bike, Search, TrendingUp, MapPin, Utensils, Settings, Sparkles, ChevronRight } from 'lucide-react';
+import type { Restaurant, DeliveryLocation } from '@/types';
 import { restaurants, categories } from '@/data/restaurants';
 import { formatSEK } from '@/lib/format';
 
 interface HomeScreenProps {
   onSelectRestaurant: (restaurant: Restaurant) => void;
   totalSaved: number;
+  location: DeliveryLocation | null;
+  onChangeLocation: () => void;
+  onOpenSettings: () => void;
+  onOpenShop: () => void;
 }
 
 const cuisineToCategory: Record<string, string> = {
@@ -23,7 +27,14 @@ const cuisineToCategory: Record<string, string> = {
   'Dryck': 'drinks',
 };
 
-export function HomeScreen({ onSelectRestaurant, totalSaved }: HomeScreenProps) {
+export function HomeScreen({
+  onSelectRestaurant,
+  totalSaved,
+  location,
+  onChangeLocation,
+  onOpenSettings,
+  onOpenShop,
+}: HomeScreenProps) {
   const [activeCategory, setActiveCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -49,14 +60,34 @@ export function HomeScreen({ onSelectRestaurant, totalSaved }: HomeScreenProps) 
       {/* Header */}
       <div className="bg-gradient-to-br from-rose-600 via-red-600 to-rose-700 px-5 pt-12 pb-6 rounded-b-3xl shadow-lg">
         <div className="flex items-center justify-between mb-4">
-          <div>
+          <button
+            onClick={onChangeLocation}
+            className="flex-1 text-left"
+          >
             <p className="text-rose-100 text-sm font-medium flex items-center gap-1">
               <MapPin className="w-4 h-4" /> Leverera till
             </p>
-            <p className="text-white font-bold text-lg">Drottninggatan 12, Stockholm</p>
-          </div>
-          <div className="w-11 h-11 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center border border-white/30">
-            <Utensils className="w-5 h-5 text-white" />
+            <p className="text-white font-bold text-base flex items-center gap-1 mt-0.5">
+              {location ? location.label : 'Välj plats'}
+              <ChevronRight className="w-4 h-4 text-rose-200" />
+            </p>
+            {location && (
+              <p className="text-rose-100/80 text-xs mt-0.5 truncate">{location.address}</p>
+            )}
+          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={onOpenShop}
+              className="w-11 h-11 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center border border-white/30 hover:bg-white/30 transition-colors"
+            >
+              <Sparkles className="w-5 h-5 text-white" />
+            </button>
+            <button
+              onClick={onOpenSettings}
+              className="w-11 h-11 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center border border-white/30 hover:bg-white/30 transition-colors"
+            >
+              <Settings className="w-5 h-5 text-white" />
+            </button>
           </div>
         </div>
 
@@ -117,13 +148,30 @@ export function HomeScreen({ onSelectRestaurant, totalSaved }: HomeScreenProps) 
       <div className="px-5 mt-6">
         <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-stone-800 to-stone-900 p-5">
           <div className="relative z-10">
-            <p className="text-rose-400 text-xs font-bold tracking-wider uppercase mb-1">Dopamin Special</p>
+            <p className="text-rose-400 text-xs font-bold tracking-wider uppercase mb-1">Spökkäk Special</p>
             <p className="text-white font-bold text-lg leading-snug">
               Beställ utan att beställa.<br />Spara pengar, få kick.
             </p>
           </div>
           <div className="absolute right-2 bottom-0 text-6xl opacity-20">🍜</div>
         </div>
+      </div>
+
+      {/* Bud shop shortcut */}
+      <div className="px-5 mt-4">
+        <button
+          onClick={onOpenShop}
+          className="w-full bg-gradient-to-r from-rose-50 to-amber-50 rounded-2xl p-4 flex items-center gap-3 border border-rose-100 hover:shadow-md transition-all"
+        >
+          <div className="w-11 h-11 rounded-full bg-white flex items-center justify-center flex-shrink-0 shadow-sm">
+            <Sparkles className="w-5 h-5 text-rose-500" />
+          </div>
+          <div className="text-left flex-1">
+            <p className="text-stone-800 font-bold text-sm">Designa din cyklist</p>
+            <p className="text-stone-500 text-xs">Fordon, kläder & kosmetika i bud-butiken</p>
+          </div>
+          <ChevronRight className="w-5 h-5 text-stone-400" />
+        </button>
       </div>
 
       {/* Restaurants */}
@@ -203,10 +251,15 @@ export function HomeScreen({ onSelectRestaurant, totalSaved }: HomeScreenProps) 
         )}
       </div>
 
-      {/* Footer */}
+      {/* Footer + disclaimer */}
       <div className="px-5 mt-8 text-center">
         <p className="text-stone-400 text-xs">
-          Dopamin Delivery · Beställ utan att beställa
+          Spökkäk · gormin-studios · Beställ utan att beställa
+        </p>
+        <p className="text-stone-400/70 text-[10px] mt-2 leading-relaxed px-4">
+          Denna app är endast avsedd för underhållningssyfte. Alla restauranger, produkter,
+          beställningar och pengar är på låtsas. Inga riktiga köp eller leveranser görs
+          (förutom valfria kosmetiska köp).
         </p>
       </div>
     </div>

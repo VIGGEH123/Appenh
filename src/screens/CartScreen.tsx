@@ -1,10 +1,14 @@
+import { useState } from 'react';
 import { ChevronLeft, Plus, Minus, Trash2, Bike, Tag, CreditCard } from 'lucide-react';
-import type { CartItem, MenuItem, Restaurant } from '@/types';
+import type { CartItem, MenuItem, Restaurant, DeliveryLocation } from '@/types';
 import { formatSEK } from '@/lib/format';
+import { Confetti } from '@/components/Confetti';
+import { playChime } from '@/lib/sound';
 
 interface CartScreenProps {
   restaurant: Restaurant;
   cart: CartItem[];
+  location: DeliveryLocation | null;
   onBack: () => void;
   onAddToCart: (item: MenuItem) => void;
   onRemoveFromCart: (item: MenuItem) => void;
@@ -15,16 +19,27 @@ interface CartScreenProps {
 export function CartScreen({
   restaurant,
   cart,
+  location,
   onBack,
   onAddToCart,
   onRemoveFromCart,
   onRemoveAll,
   onCheckout,
 }: CartScreenProps) {
+  const [celebrate, setCelebrate] = useState(false);
   const subtotal = cart.reduce((sum, ci) => sum + ci.item.price * ci.quantity, 0);
   const deliveryFee = restaurant.deliveryFee;
   const serviceFee = Math.round(subtotal * 0.05);
   const total = subtotal + deliveryFee + serviceFee;
+
+  const handleCheckout = () => {
+    playChime();
+    setCelebrate(true);
+    setTimeout(() => {
+      setCelebrate(false);
+      onCheckout();
+    }, 1400);
+  };
 
   if (cart.length === 0) {
     return (
@@ -44,6 +59,8 @@ export function CartScreen({
 
   return (
     <div className="min-h-screen bg-stone-50 pb-32">
+      <Confetti active={celebrate} durationMs={1800} />
+
       {/* Header */}
       <div className="bg-white px-5 py-4 flex items-center gap-3 sticky top-0 z-20 shadow-sm">
         <button
@@ -67,8 +84,12 @@ export function CartScreen({
             </div>
             <div className="flex-1">
               <p className="text-stone-800 font-bold text-sm">Levereras till</p>
-              <p className="text-stone-500 text-sm mt-0.5">Drottninggatan 12, 111 51 Stockholm</p>
-              <p className="text-rose-600 text-xs font-medium mt-1">Levereras om {restaurant.deliveryTime}</p>
+              <p className="text-stone-500 text-sm mt-0.5">
+                {location ? `${location.address}` : 'Ingen plats vald'}
+              </p>
+              <p className="text-rose-600 text-xs font-medium mt-1">
+                Levereras om {restaurant.deliveryTime}
+              </p>
             </div>
           </div>
         </div>
@@ -163,8 +184,8 @@ export function CartScreen({
       {/* Checkout bar */}
       <div className="fixed bottom-0 left-0 right-0 max-w-md mx-auto p-4 bg-gradient-to-t from-stone-50 to-transparent">
         <button
-          onClick={onCheckout}
-          className="w-full bg-rose-600 text-white rounded-2xl py-4 px-5 flex items-center justify-between shadow-2xl hover:bg-rose-700 transition-colors"
+          onClick={handleCheckout}
+          className="w-full bg-rose-600 text-white rounded-2xl py-4 px-5 flex items-center justify-between shadow-2xl hover:bg-rose-700 transition-colors active:scale-[0.98]"
         >
           <span className="font-bold text-base">Beställ för {formatSEK(total)}</span>
           <span className="font-medium text-sm text-white/80">Falsk betalning →</span>
