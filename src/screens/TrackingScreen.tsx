@@ -115,12 +115,15 @@ export function TrackingScreen({
   const mapRef = useRef<L.Map | null>(null);
   const courierMarkerRef = useRef<L.Marker | null>(null);
   const routeLineRef = useRef<L.Polyline | null>(null);
+  const homeMarkerRef = useRef<L.Marker | null>(null);
+  const restaurantMarkerRef = useRef<L.Marker | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const progressRef = useRef(0);
   const speedRef = useRef<SpeedMode>('1x');
   const arrivedRef = useRef(false);
   const lastNotifRef = useRef<Phase>('picked_up');
+  const drawnRef = useRef(false);
 
   // Pick a restaurant location near the user
   useEffect(() => {
@@ -190,16 +193,16 @@ export function TrackingScreen({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Draw markers + route once route points are ready
+  // Draw markers + route once route points are ready (only once)
   useEffect(() => {
     const map = mapRef.current;
     const restaurantLoc = restaurantLocRef.current;
-    if (!map || !restaurantLoc || routePoints.length === 0) return;
+    if (!map || !restaurantLoc || routePoints.length === 0 || drawnRef.current) return;
 
-    map.setView(userLocation, 14);
+    drawnRef.current = true;
 
-    L.marker(userLocation, { icon: createHomeIcon() }).addTo(map);
-    L.marker(restaurantLoc, { icon: createRestaurantIcon() }).addTo(map);
+    homeMarkerRef.current = L.marker(userLocation, { icon: createHomeIcon() }).addTo(map);
+    restaurantMarkerRef.current = L.marker(restaurantLoc, { icon: createRestaurantIcon() }).addTo(map);
 
     // Route line following roads
     const latlngs: L.LatLngExpression[] = routePoints.map((p) => [p.lat, p.lng]);
@@ -216,7 +219,23 @@ export function TrackingScreen({
     }).addTo(map);
 
     map.fitBounds(L.latLngBounds([restaurantLoc, userLocation]).pad(0.25));
-  }, [routePoints, userLocation, cosmetics.selectedVehicleId, cosmetics.selectedOutfitId]);
+
+    return () => {
+      if (homeMarkerRef.current) { map.removeLayer(homeMarkerRef.current); homeMarkerRef.current = null; }
+      if (restaurantMarkerRef.current) { map.removeLayer(restaurantMarkerRef.current); restaurantMarkerRef.current = null; }
+      if (routeLineRef.current) { map.removeLayer(routeLineRef.current); routeLineRef.current = null; }
+      if (courierMarkerRef.current) { map.removeLayer(courierMarkerRef.current); courierMarkerRef.current = null; }
+      drawnRef.current = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [routePoints]);
+
+  // Update courier icon when cosmetics change (without recreating marker)
+  useEffect(() => {
+    if (courierMarkerRef.current) {
+      courierMarkerRef.current.setIcon(createCourierIcon(cosmetics.selectedVehicleId, cosmetics.selectedOutfitId));
+    }
+  }, [cosmetics.selectedVehicleId, cosmetics.selectedOutfitId]);
 
   // Realistic timer: 10-15 minutes of real time at 1x.
   // We advance progress in small increments and compute remaining time.
